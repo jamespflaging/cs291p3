@@ -9,6 +9,7 @@ class AuthController < ApplicationController
       user.last_active_at = Time.current
       
       if user.save
+        ExpertProfile.create!(user: user)
         token = JwtService.encode(user)
         render json: {
           user: user_json(user), token: token 
@@ -40,7 +41,7 @@ class AuthController < ApplicationController
   end
 
   def me
-    render json: { user: user_json(@current_user) }, status: :ok
+    render json: user_json(@current_user), status: :ok
   end
 
   private
@@ -52,8 +53,8 @@ class AuthController < ApplicationController
     {
       id: user.id,
       username: user.username,
-      created_at: user.created_at,
-      last_active_at: user.last_active_at
+      created_at: user.created_at&.iso8601,
+      last_active_at: user.last_active_at&.iso8601
     }
   end
 end

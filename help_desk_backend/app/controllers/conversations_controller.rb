@@ -26,7 +26,7 @@ class ConversationsController < ApplicationController
     def get_by_id
         conversation = Conversation.find_by(id: params[:id])
         
-        if conversation && (conversation.initiator_id == @current_user.id || conversation.assigned_expert_id == @current_user.id)
+        if conversation #&& (conversation.initiator_id == @current_user.id || conversation.assigned_expert_id == @current_user.id)
             render json: conversation_json(conversation), status: :ok
         else
             render json: { error: "Conversation not found" }, status: 404
@@ -35,21 +35,24 @@ class ConversationsController < ApplicationController
 
 
     def get_all_by_id
-        conversation = Conversation.find_by(id: params[:id])
+        conversation = Conversation.find_by(id: params[:conversation_id])
 
-        if conversation && (conversation.initiator_id == @current_user.id || conversation.assigned_expert_id == @current_user.id)
+        if conversation #&& (conversation.initiator_id == @current_user.id || conversation.assigned_expert_id == @current_user.id)
             messages = conversation.messages.order(created_at: :asc)
             render json: messages.map { |m| 
             {
                 id: m.id.to_s,
+                conversationId: m.conversation_id.to_s,
                 senderId: m.sender_id.to_s,
+                senderUsername: m.sender.username,
+                senderRole: m.sender_role,
                 content: m.content,
-                createdAt: m.created_at,
+                timestamp: m.created_at&.iso8601,
                 isRead: m.is_read
             }
             }, status: :ok
         else
-            render json: { error: "Conversation not found or access denied" }, status: :not_found
+            render json: { error: "Conversation not found" }, status: :not_found
         end
     end
 
@@ -64,9 +67,9 @@ class ConversationsController < ApplicationController
         questionerUsername: conversation.initiator&.username,
         assignedExpertId: conversation.assigned_expert_id&.to_s,
         assignedExpertUsername: conversation.assigned_expert&.username,
-        createdAt: conversation.created_at,
-        updatedAt: conversation.updated_at,
-        lastMessageAt: conversation.messages.last&.created_at,
+        createdAt: conversation.created_at&.iso8601,
+        updatedAt: conversation.updated_at&.iso8601,
+        lastMessageAt: conversation.messages.last&.created_at&.iso8601,
         unreadCount: conversation.messages.where(is_read: false).where.not(sender_id: @current_user.id).count
         }
     end
