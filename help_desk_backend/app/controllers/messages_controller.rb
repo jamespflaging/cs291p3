@@ -1,7 +1,7 @@
 class MessagesController < ApplicationController
-    def create:
+    def create
     end
 
-    def mark_read:
+    def mark_read
     end
 end

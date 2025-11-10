@@ -1,4 +1,6 @@
 class AuthController < ApplicationController
+  before_action :authorize_jwt, except: [:register, :login, :logout]
+
   def register
     if User.find_by(username: user_params[:username])
       render json: {error: "Username has already been taken"}, status: 422
@@ -33,34 +35,12 @@ class AuthController < ApplicationController
   end
 
   def refresh
-    token = request.headers['Authorization']&.split(' ')&.last
-    user_payload = JwtService.decode(token)
-    if user_payload
-      user = User.find_by(id: user_payload[:user_id])
-      if user
-        new_token = JwtService.encode(user)
-        render json: { user: user_json(user), token: new_token }, status: :ok
-      else
-        render json: { error: 'User missing' }, status: 404 #should not happen
-      end
-    else
-      render json: { error: 'No session found' }, status: 401
-    end
+    new_token = JwtService.encode(@current_user)
+    render json: { user: user_json(@current_user), token: new_token }, status: :ok
   end
 
   def me
-    token = request.headers['Authorization']&.split(' ')&.last
-    user_payload = JwtService.decode(token)
-    if user_payload = JwtService.decode(token)
-      user = User.find_by(id: user_payload[:user_id])
-      if user
-        render json: { user: user_json(user) }, status: :ok
-      else
-        render json: { error: 'User missing' }, status: 404 #should not happen
-      end
-    else
-      render json: { error: 'No session found' }, status: 401
-    end
+    render json: { user: user_json(@current_user) }, status: :ok
   end
 
   private
